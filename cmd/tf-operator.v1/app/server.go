@@ -15,6 +15,7 @@
 package app
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"time"
@@ -129,7 +130,7 @@ func Run(opt *options.ServerOption) error {
 	go unstructuredInformer.Informer().Run(stopCh)
 
 	// Set leader election start function.
-	run := func(<-chan struct{}) {
+	run := func(context.Context) {
 		isLeader.Set(1)
 		if err := tc.Run(opt.Threadiness, stopCh); err != nil {
 			log.Errorf("Failed to run the controller: %v", err)
@@ -163,7 +164,7 @@ func Run(opt *options.ServerOption) error {
 	}
 
 	// Start leader election.
-	election.RunOrDie(election.LeaderElectionConfig{
+	election.RunOrDie(context.TODO(), election.LeaderElectionConfig{
 		Lock:          rl,
 		LeaseDuration: leaseDuration,
 		RenewDeadline: renewDuration,
