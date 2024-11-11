@@ -6,7 +6,7 @@ import (
 	"time"
 
 	log "github.com/sirupsen/logrus"
-	"k8s.io/api/core/v1"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	metav1unstructured "k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -39,13 +39,13 @@ func (tc *TFController) addTFJob(obj interface{}) {
 			errMsg := fmt.Sprintf("Failed to marshal the object to TFJob; the spec is invalid: %v", err)
 			logger.Warn(errMsg)
 			// TODO(jlewi): v1 doesn't appear to define an error type.
-			tc.Recorder.Event(un, v1.EventTypeWarning, failedMarshalTFJobReason, errMsg)
+			tc.Recorder.Event(un, corev1.EventTypeWarning, failedMarshalTFJobReason, errMsg)
 
 			status := common.JobStatus{
 				Conditions: []common.JobCondition{
 					common.JobCondition{
 						Type:               common.JobFailed,
-						Status:             v1.ConditionTrue,
+						Status:             corev1.ConditionTrue,
 						LastUpdateTime:     metav1.Now(),
 						LastTransitionTime: metav1.Now(),
 						Reason:             failedMarshalTFJobReason,
@@ -170,27 +170,30 @@ func (tc *TFController) updateTFJob(old, cur interface{}) {
 	}
 }
 
-func (tc *TFController) deletePodsAndServices(tfJob *tfv1.TFJob, pods []*v1.Pod) error {
+func (tc *TFController) deletePodsAndServices(tfJob *tfv1.TFJob, pods []*corev1.Pod) error {
 	if len(pods) == 0 {
 		return nil
 	}
 
-	// Delete nothing when the cleanPodPolicy is None.
-	if *tfJob.Spec.CleanPodPolicy == common.CleanPodPolicyNone {
-		return nil
-	}
+	logger := tflogger.LoggerForJob(tfJob)
 
-	for _, pod := range pods {
-		if *tfJob.Spec.CleanPodPolicy == common.CleanPodPolicyRunning && pod.Status.Phase != v1.PodRunning && pod.Status.Phase != v1.PodPending { // && pod.Status.Phase != v1.PodUnknown
-			continue
-		}
-		if err := tc.PodControl.DeletePod(pod.Namespace, pod.Name, tfJob); err != nil {
+	cleanPodPolicy := getCleanPodPolicy(tfJob)
+	switch cleanPodPolicy {
+	case common.CleanPodPolicyUndefined, common.CleanPodPolicyNone:
+		logger.Infof("Do nothing when the clean pod policy is %s.", cleanPodPolicy)
+		return nil
+	case common.CleanPodPolicyRunning:
+		logger.Infof("Deleting running pods and associated services.")
+		if err := tc.deleteRunningPodsAndServices(tfJob, pods); err != nil {
 			return err
 		}
-		// Pod and service have the same name, thus the service could be deleted using pod's name.
-		if err := tc.ServiceControl.DeleteService(pod.Namespace, pod.Name, tfJob); err != nil {
+	case common.CleanPodPolicyAll:
+		logger.Infof("Deleting all pods and associated services.")
+		if err := tc.deleteAllPodsAndServices(tfJob, pods); err != nil {
 			return err
 		}
+	default:
+		return fmt.Errorf("the clean pod policy %s is not supported", cleanPodPolicy)
 	}
 
 	tfjobToUpdate := tfJob.DeepCopy()
@@ -207,6 +210,38 @@ func (tc *TFController) deletePodsAndServices(tfJob *tfv1.TFJob, pods []*v1.Pod)
 		}
 	}
 
+	return nil
+}
+
+func (tc *TFController) deleteRunningPodsAndServices(tfJob *tfv1.TFJob, pods []*corev1.Pod) error {
+	for _, pod := range pods {
+		if pod.Status.Phase != corev1.PodPending && pod.Status.Phase != corev1.PodRunning {
+			continue
+		}
+
+		if err := tc.PodControl.DeletePod(pod.Namespace, pod.Name, tfJob); err != nil {
+			return err
+		}
+
+		// Pod and service have the same name, thus the service could be deleted using pod's name.
+		if err := tc.ServiceControl.DeleteService(pod.Namespace, pod.Name, tfJob); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (tc *TFController) deleteAllPodsAndServices(tfJob *tfv1.TFJob, pods []*corev1.Pod) error {
+	for _, pod := range pods {
+		if err := tc.PodControl.DeletePod(pod.Namespace, pod.Name, tfJob); err != nil {
+			return err
+		}
+
+		// Pod and service have the same name, thus the service could be deleted using pod's name.
+		if err := tc.ServiceControl.DeleteService(pod.Namespace, pod.Name, tfJob); err != nil {
+			return err
+		}
+	}
 	return nil
 }
 
@@ -245,6 +280,13 @@ func (tc *TFController) cleanupTFJob(tfJob *tfv1.TFJob) error {
 // deleteTFJob deletes the given TFJob.
 func (tc *TFController) deleteTFJob(tfJob *tfv1.TFJob) error {
 	return tc.tfJobClientSet.KubeflowV1().TFJobs(tfJob.Namespace).Delete(tfJob.Name, &metav1.DeleteOptions{})
+}
+
+func getCleanPodPolicy(tfJob *tfv1.TFJob) common.CleanPodPolicy {
+	if tfJob.Spec.CleanPodPolicy != nil {
+		return *tfJob.Spec.CleanPodPolicy
+	}
+	return common.CleanPodPolicyUndefined
 }
 
 func getTotalReplicas(tfjob *tfv1.TFJob) int32 {
