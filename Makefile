@@ -46,7 +46,32 @@ manifests: controller-gen ## Generate CustomResourceDefinition, RBAC and Webhook
 generate: controller-gen ## Generate code containing DeepCopy, DeepCopyInto, and DeepCopyObject method implementations.
 	GOPATH=$(shell go env GOPATH) hack/update-codegen.sh
 
+.PHONY: go-fmt
+go-fmt: ## Run go fmt against code.
+	@echo "Running go fmt..."
+	if [ -n "$(shell go fmt ./...)" ]; then \
+		echo "Go code is not formatted, need to run \"make go-fmt\" and commit the changes."; \
+		false; \
+	else \
+	    echo "Go code is formatted."; \
+	fi
+
+.PHONY: go-vet
+go-vet: ## Run go vet against code.
+	@echo "Running go vet..."
+	go vet ./...
+
+.PHONY: unit-test
+unit-test: ## Run unit tests.
+	@echo "Running unit tests..."
+	go test $(shell go list ./... | grep -v /e2e) -coverprofile cover.out
+
 ##@ Build
+
+.PHONY: build-operator
+build-operator: ## Build Tensorflow operator.
+	echo "Building tf-operator binary..."
+	go build -o $(TF_OPERATOR) cmd/tf-operator.v1/main.go
 
 .PHONY: build
 build: ## build exec file gpushare-device-plugin on host
