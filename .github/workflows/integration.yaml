@@ -1,0 +1,101 @@
+name: Integration Test
+
+on:
+  pull_request:
+    branches:
+      - ack-tf-operator
+
+  push:
+    branches:
+      - ack-tf-operator
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}-${{ github.actor }}
+  cancel-in-progress: true
+
+jobs:
+  code-check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+
+      - name: Run go mod tidy
+        run: |
+          go mod tidy
+          if ! git diff --quiet; then
+            echo "Please run 'go mod tidy' and commit the changes."
+            git diff
+            false
+          fi
+
+      - name: Run go mod vendor
+        run: |
+          go mod vendor
+          if ! git diff --quiet; then
+            echo "Please run 'go mod vendor' and commit the changes."
+            git diff
+            false
+          fi
+
+      - name: Generate manifests
+        run: |
+          make manifests
+          if ! git diff --quiet; then
+            echo "Need to re-run 'make manifests' and commit the changes."
+            git diff
+            false
+          fi
+
+      - name: Generate code
+        run: |
+          make generate
+          if ! git diff --quiet; then
+            echo "Need to re-run 'make generate' and commit the changes."
+            git diff
+            false
+          fi
+
+      - name: Run go fmt check
+        run: |
+          make go-fmt
+          if ! git diff --quiet; then
+            echo "Need to re-run 'make go-fmt' and commit the changes."
+            git diff
+            false
+          fi
+
+      - name: Run go vet check
+        run: |
+          make go-vet
+          if ! git diff --quiet; then
+            echo "Need to re-run 'make go-vet' and commit the changes."
+            git diff
+            false
+          fi
+
+  build-tf-operator:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+
+      - name: Run go unit tests
+        run: make unit-test
+
+      - name: Build operator
+        run: make build-operator
