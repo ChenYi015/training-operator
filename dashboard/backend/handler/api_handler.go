@@ -25,7 +25,7 @@ type APIHandler struct {
 // if any and related pods
 type TFJobDetail struct {
 	TFJob *tfv1.TFJob `json:"tfJob"`
-	Pods  []v1.Pod       `json:"pods"`
+	Pods  []v1.Pod    `json:"pods"`
 }
 
 // TFJobList is a list of TFJobs
