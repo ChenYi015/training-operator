@@ -16,8 +16,8 @@ package tensorflow
 
 import (
 	"fmt"
-	common "github.com/kubeflow/tf-operator/pkg/apis/common/v1"
 
+	common "github.com/kubeflow/tf-operator/pkg/apis/common/v1"
 	tfv1 "github.com/kubeflow/tf-operator/pkg/apis/tensorflow/v1"
 )
 

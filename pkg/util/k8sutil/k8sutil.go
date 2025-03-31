@@ -19,13 +19,14 @@ import (
 	"os"
 
 	log "github.com/sirupsen/logrus"
-	"k8s.io/api/core/v1"
+	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
-	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp" // for gcp auth
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
+
+	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp" // for gcp auth
 )
 
 // RecommendedConfigPathEnvVar is a environment variable for path configuration
@@ -92,8 +93,8 @@ func CascadeDeleteOptions(gracePeriodSeconds int64) *metav1.DeleteOptions {
 }
 
 // FilterActivePods returns pods that have not terminated.
-func FilterActivePods(pods []*v1.Pod) []*v1.Pod {
-	var result []*v1.Pod
+func FilterActivePods(pods []*corev1.Pod) []*corev1.Pod {
+	var result []*corev1.Pod
 	for _, p := range pods {
 		if IsPodActive(p) {
 			result = append(result, p)
@@ -105,14 +106,14 @@ func FilterActivePods(pods []*v1.Pod) []*v1.Pod {
 	return result
 }
 
-func IsPodActive(p *v1.Pod) bool {
-	return v1.PodSucceeded != p.Status.Phase &&
-		v1.PodFailed != p.Status.Phase &&
+func IsPodActive(p *corev1.Pod) bool {
+	return corev1.PodSucceeded != p.Status.Phase &&
+		corev1.PodFailed != p.Status.Phase &&
 		p.DeletionTimestamp == nil
 }
 
 // filterPodCount returns pods based on their phase.
-func FilterPodCount(pods []*v1.Pod, phase v1.PodPhase) int32 {
+func FilterPodCount(pods []*corev1.Pod, phase corev1.PodPhase) int32 {
 	var result int32
 	for i := range pods {
 		if phase == pods[i].Status.Phase {

@@ -8,8 +8,8 @@ import (
 	"github.com/kubernetes-sigs/kube-batch/pkg/apis/scheduling/v1alpha1"
 	kubebatchclient "github.com/kubernetes-sigs/kube-batch/pkg/client/clientset/versioned"
 	log "github.com/sirupsen/logrus"
-	"k8s.io/api/core/v1"
-	"k8s.io/api/policy/v1beta1"
+	corev1 "k8s.io/api/core/v1"
+	policyv1beta1 "k8s.io/api/policy/v1beta1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -155,16 +155,16 @@ func NewJobController(
 	eventBroadcaster := record.NewBroadcaster()
 	eventBroadcaster.StartLogging(log.Infof)
 	eventBroadcaster.StartRecordingToSink(&typedcorev1.EventSinkImpl{Interface: kubeClientSet.CoreV1().Events("")})
-	recorder := eventBroadcaster.NewRecorder(scheme.Scheme, v1.EventSource{Component: controllerImpl.ControllerName()})
+	recorder := eventBroadcaster.NewRecorder(scheme.Scheme, corev1.EventSource{Component: controllerImpl.ControllerName()})
 
 	realPodControl := control.RealPodControl{
 		KubeClient: kubeClientSet,
-		Recorder:   eventBroadcaster.NewRecorder(scheme.Scheme, v1.EventSource{Component: controllerImpl.ControllerName()}),
+		Recorder:   eventBroadcaster.NewRecorder(scheme.Scheme, corev1.EventSource{Component: controllerImpl.ControllerName()}),
 	}
 
 	realServiceControl := control.RealServiceControl{
 		KubeClient: kubeClientSet,
-		Recorder:   eventBroadcaster.NewRecorder(scheme.Scheme, v1.EventSource{Component: controllerImpl.ControllerName()}),
+		Recorder:   eventBroadcaster.NewRecorder(scheme.Scheme, corev1.EventSource{Component: controllerImpl.ControllerName()}),
 		EventLevel: eventLevel,
 	}
 
@@ -239,7 +239,7 @@ func (jc *JobController) SyncPodGroup(job metav1.Object, minAvailableReplicas in
 }
 
 // SyncPdb will create a PDB for gang scheduling by kube-arbitrator.
-func (jc *JobController) SyncPdb(job metav1.Object, minAvailableReplicas int32) (*v1beta1.PodDisruptionBudget, error) {
+func (jc *JobController) SyncPdb(job metav1.Object, minAvailableReplicas int32) (*policyv1beta1.PodDisruptionBudget, error) {
 	labelJobName := jc.Controller.GetJobNameLabelKey()
 
 	// Check the pdb exist or not
@@ -253,14 +253,14 @@ func (jc *JobController) SyncPdb(job metav1.Object, minAvailableReplicas int32) 
 
 	// Create pdb for gang scheduling by kube-arbitrator
 	minAvailable := intstr.FromInt(int(minAvailableReplicas))
-	createPdb := &v1beta1.PodDisruptionBudget{
+	createPdb := &policyv1beta1.PodDisruptionBudget{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: job.GetName(),
 			OwnerReferences: []metav1.OwnerReference{
 				*jc.GenOwnerReference(job),
 			},
 		},
-		Spec: v1beta1.PodDisruptionBudgetSpec{
+		Spec: policyv1beta1.PodDisruptionBudgetSpec{
 			MinAvailable: &minAvailable,
 			Selector: &metav1.LabelSelector{
 				MatchLabels: map[string]string{
@@ -294,10 +294,10 @@ func (jc *JobController) DeletePodGroup(object runtime.Object) error {
 	//delete podGroup
 	err = kubeBatchClientInterface.SchedulingV1alpha1().PodGroups(accessor.GetNamespace()).Delete(accessor.GetName(), &metav1.DeleteOptions{})
 	if err != nil {
-		jc.Recorder.Eventf(object, v1.EventTypeWarning, "FailedDeletePodGroup", "Error deleting: %v", err)
+		jc.Recorder.Eventf(object, corev1.EventTypeWarning, "FailedDeletePodGroup", "Error deleting: %v", err)
 		return fmt.Errorf("unable to delete PodGroup: %v", err)
 	} else {
-		jc.Recorder.Eventf(object, v1.EventTypeNormal, "SuccessfulDeletePodGroup", "Deleted PodGroup: %v", accessor.GetName())
+		jc.Recorder.Eventf(object, corev1.EventTypeNormal, "SuccessfulDeletePodGroup", "Deleted PodGroup: %v", accessor.GetName())
 	}
 	return nil
 }

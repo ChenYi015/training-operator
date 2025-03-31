@@ -19,7 +19,7 @@ import (
 	"sync"
 
 	log "github.com/sirupsen/logrus"
-	"k8s.io/api/core/v1"
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -43,9 +43,9 @@ const (
 // created as an interface to allow testing.
 type ServiceControlInterface interface {
 	// CreateServices creates new Services according to the spec.
-	CreateServices(namespace string, service *v1.Service, object runtime.Object) error
+	CreateServices(namespace string, service *corev1.Service, object runtime.Object) error
 	// CreateServicesWithControllerRef creates new services according to the spec, and sets object as the service's controller.
-	CreateServicesWithControllerRef(namespace string, service *v1.Service, object runtime.Object, controllerRef *metav1.OwnerReference) error
+	CreateServicesWithControllerRef(namespace string, service *corev1.Service, object runtime.Object, controllerRef *metav1.OwnerReference) error
 	// PatchService patches the service.
 	PatchService(namespace, name string, data []byte) error
 	// DeleteService deletes the service identified by serviceID.
@@ -83,30 +83,30 @@ func (r RealServiceControl) PatchService(namespace, name string, data []byte) er
 	return err
 }
 
-func (r RealServiceControl) CreateServices(namespace string, service *v1.Service, object runtime.Object) error {
+func (r RealServiceControl) CreateServices(namespace string, service *corev1.Service, object runtime.Object) error {
 	return r.createServices(namespace, service, object, nil)
 }
 
-func (r RealServiceControl) CreateServicesWithControllerRef(namespace string, service *v1.Service, controllerObject runtime.Object, controllerRef *metav1.OwnerReference) error {
+func (r RealServiceControl) CreateServicesWithControllerRef(namespace string, service *corev1.Service, controllerObject runtime.Object, controllerRef *metav1.OwnerReference) error {
 	if err := validateControllerRef(controllerRef); err != nil {
 		return err
 	}
 	return r.createServices(namespace, service, controllerObject, controllerRef)
 }
 
-func (r RealServiceControl) createServices(namespace string, service *v1.Service, object runtime.Object, controllerRef *metav1.OwnerReference) error {
+func (r RealServiceControl) createServices(namespace string, service *corev1.Service, object runtime.Object, controllerRef *metav1.OwnerReference) error {
 	if labels.Set(service.Labels).AsSelectorPreValidated().Empty() {
 		return fmt.Errorf("unable to create Services, no labels")
 	}
 	serviceWithOwner, err := getServiceFromTemplate(service, object, controllerRef)
 	if err != nil {
-		r.Recorder.Eventf(object, v1.EventTypeWarning, FailedCreateServiceReason, "Error creating: %v", err)
+		r.Recorder.Eventf(object, corev1.EventTypeWarning, FailedCreateServiceReason, "Error creating: %v", err)
 		return fmt.Errorf("unable to create services: %v", err)
 	}
 
 	newService, err := r.KubeClient.CoreV1().Services(namespace).Create(serviceWithOwner)
 	if err != nil {
-		r.Recorder.Eventf(object, v1.EventTypeWarning, FailedCreateServiceReason, "Error creating: %v", err)
+		r.Recorder.Eventf(object, corev1.EventTypeWarning, FailedCreateServiceReason, "Error creating: %v", err)
 		return fmt.Errorf("unable to create services: %v", err)
 	}
 
@@ -117,7 +117,7 @@ func (r RealServiceControl) createServices(namespace string, service *v1.Service
 	}
 	log.Infof("Controller %v created service %v", accessor.GetName(), newService.Name)
 	if r.EventLevel == options.EventLevelDebug {
-		r.Recorder.Eventf(object, v1.EventTypeNormal, SuccessfulCreateServiceReason, "Created service: %v", newService.Name)
+		r.Recorder.Eventf(object, corev1.EventTypeNormal, SuccessfulCreateServiceReason, "Created service: %v", newService.Name)
 	}
 
 	return nil
@@ -142,17 +142,17 @@ func (r RealServiceControl) DeleteService(namespace, serviceID string, object ru
 	}
 	log.Infof("Controller %v deleting service %v/%v", accessor.GetName(), namespace, serviceID)
 	if err := r.KubeClient.CoreV1().Services(namespace).Delete(serviceID, nil); err != nil {
-		r.Recorder.Eventf(object, v1.EventTypeWarning, FailedDeleteServiceReason, "Error deleting: %v", err)
+		r.Recorder.Eventf(object, corev1.EventTypeWarning, FailedDeleteServiceReason, "Error deleting: %v", err)
 		return fmt.Errorf("unable to delete service: %v", err)
 	} else if r.EventLevel == options.EventLevelDebug {
-		r.Recorder.Eventf(object, v1.EventTypeNormal, SuccessfulDeleteServiceReason, "Deleted service: %v", serviceID)
+		r.Recorder.Eventf(object, corev1.EventTypeNormal, SuccessfulDeleteServiceReason, "Deleted service: %v", serviceID)
 	}
 	return nil
 }
 
 type FakeServiceControl struct {
 	sync.Mutex
-	Templates         []v1.Service
+	Templates         []corev1.Service
 	ControllerRefs    []metav1.OwnerReference
 	DeleteServiceName []string
 	Patches           [][]byte
@@ -173,7 +173,7 @@ func (f *FakeServiceControl) PatchService(namespace, name string, data []byte) e
 	return nil
 }
 
-func (f *FakeServiceControl) CreateServices(namespace string, service *v1.Service, object runtime.Object) error {
+func (f *FakeServiceControl) CreateServices(namespace string, service *corev1.Service, object runtime.Object) error {
 	f.Lock()
 	defer f.Unlock()
 	f.CreateCallCount++
@@ -187,7 +187,7 @@ func (f *FakeServiceControl) CreateServices(namespace string, service *v1.Servic
 	return nil
 }
 
-func (f *FakeServiceControl) CreateServicesWithControllerRef(namespace string, service *v1.Service, object runtime.Object, controllerRef *metav1.OwnerReference) error {
+func (f *FakeServiceControl) CreateServicesWithControllerRef(namespace string, service *corev1.Service, object runtime.Object, controllerRef *metav1.OwnerReference) error {
 	f.Lock()
 	defer f.Unlock()
 	f.CreateCallCount++
@@ -216,14 +216,14 @@ func (f *FakeServiceControl) Clear() {
 	f.Lock()
 	defer f.Unlock()
 	f.DeleteServiceName = []string{}
-	f.Templates = []v1.Service{}
+	f.Templates = []corev1.Service{}
 	f.ControllerRefs = []metav1.OwnerReference{}
 	f.Patches = [][]byte{}
 	f.CreateLimit = 0
 	f.CreateCallCount = 0
 }
 
-func getServiceFromTemplate(template *v1.Service, parentObject runtime.Object, controllerRef *metav1.OwnerReference) (*v1.Service, error) {
+func getServiceFromTemplate(template *corev1.Service, parentObject runtime.Object, controllerRef *metav1.OwnerReference) (*corev1.Service, error) {
 	service := template.DeepCopy()
 	if controllerRef != nil {
 		service.OwnerReferences = append(service.OwnerReferences, *controllerRef)

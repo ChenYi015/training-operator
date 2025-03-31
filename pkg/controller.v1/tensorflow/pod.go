@@ -17,15 +17,15 @@ package tensorflow
 
 import (
 	"fmt"
-	"github.com/kubeflow/tf-operator/cmd/tf-operator.v1/app/options"
 	"strconv"
 	"strings"
 	"time"
 
-	v1 "k8s.io/api/core/v1"
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 
+	"github.com/kubeflow/tf-operator/cmd/tf-operator.v1/app/options"
 	common "github.com/kubeflow/tf-operator/pkg/apis/common/v1"
 	tfv1 "github.com/kubeflow/tf-operator/pkg/apis/tensorflow/v1"
 	"github.com/kubeflow/tf-operator/pkg/common/jobcontroller"
@@ -55,9 +55,9 @@ const (
 // It will requeue the tfjob in case of an error while creating/deleting pods.
 func (tc *TFController) reconcilePods(
 	tfjob *tfv1.TFJob,
-	pods []*v1.Pod,
+	pods []*corev1.Pod,
 	rtype tfv1.TFReplicaType,
-	spec *common.ReplicaSpec, rstatus map[string]v1.PodPhase) error {
+	spec *common.ReplicaSpec, rstatus map[string]corev1.PodPhase) error {
 
 	// Convert TFReplicaType to lower string.
 	rt := strings.ToLower(string(rtype))
@@ -104,9 +104,9 @@ func (tc *TFController) reconcilePods(
 				}
 
 				if masterRole || isWorker0Type {
-					updateTFJobReplicaStatuses(tfjob, rtype, &v1.Pod{
-						Status: v1.PodStatus{
-							Phase: v1.PodSucceeded,
+					updateTFJobReplicaStatuses(tfjob, rtype, &corev1.Pod{
+						Status: corev1.PodStatus{
+							Phase: corev1.PodSucceeded,
 						},
 					})
 				}
@@ -130,15 +130,15 @@ func (tc *TFController) reconcilePods(
 					exitCode = state.Terminated.ExitCode
 					logger.Infof("Pod: %v.%v exited with code %v", pod.Namespace, pod.Name, exitCode)
 					if tc.JobController.Config.EventLevel == options.EventLevelDebug {
-						tc.Recorder.Eventf(tfjob, v1.EventTypeNormal, exitedWithCodeReason, "Pod: %v.%v exited with code %v", pod.Namespace, pod.Name, exitCode)
+						tc.Recorder.Eventf(tfjob, corev1.EventTypeNormal, exitedWithCodeReason, "Pod: %v.%v exited with code %v", pod.Namespace, pod.Name, exitCode)
 					} else if exitCode != 0 {
-						tc.Recorder.Eventf(tfjob, v1.EventTypeNormal, exitedWithCodeReason, "Pod: %v.%v exited with code %v", pod.Namespace, pod.Name, exitCode)
+						tc.Recorder.Eventf(tfjob, corev1.EventTypeNormal, exitedWithCodeReason, "Pod: %v.%v exited with code %v", pod.Namespace, pod.Name, exitCode)
 					}
 				}
 			}
 			// Check if the pod is retryable.
 			if spec.RestartPolicy == common.RestartPolicyExitCode {
-				if pod.Status.Phase == v1.PodFailed && train_util.IsRetryableExitCode(exitCode) {
+				if pod.Status.Phase == corev1.PodFailed && train_util.IsRetryableExitCode(exitCode) {
 					logger.Infof("Need to restart the pod: %v.%v", pod.Namespace, pod.Name)
 					if err := tc.PodControl.DeletePod(pod.Namespace, pod.Name, tfjob); err != nil {
 						return err
@@ -204,10 +204,10 @@ func (tc *TFController) createNewPod(tfjob *tfv1.TFJob, rt, index string, spec *
 
 	// Submit a warning event if the user specifies restart policy for
 	// the pod template. We recommend to set it from the replica level.
-	if podTemplate.Spec.RestartPolicy != v1.RestartPolicy("") {
+	if podTemplate.Spec.RestartPolicy != corev1.RestartPolicy("") {
 		errMsg := "Restart policy in pod template will be overwritten by restart policy in replica spec"
 		logger.Warning(errMsg)
-		tc.Recorder.Event(tfjob, v1.EventTypeWarning, podTemplateRestartPolicyReason, errMsg)
+		tc.Recorder.Event(tfjob, corev1.EventTypeWarning, podTemplateRestartPolicyReason, errMsg)
 	}
 	setRestartPolicy(podTemplate, spec)
 
@@ -218,7 +218,7 @@ func (tc *TFController) createNewPod(tfjob *tfv1.TFJob, rt, index string, spec *
 		if isNonGangSchedulerSet(tfjob) {
 			errMsg := "Another scheduler is specified when gang-scheduling is enabled and it will not be overwritten"
 			logger.Warning(errMsg)
-			tc.Recorder.Event(tfjob, v1.EventTypeWarning, podTemplateSchedulerNameReason, errMsg)
+			tc.Recorder.Event(tfjob, corev1.EventTypeWarning, podTemplateSchedulerNameReason, errMsg)
 		} else {
 			podTemplate.Spec.SchedulerName = gangSchedulerName
 		}
@@ -273,7 +273,7 @@ func isPodTTLReached(tfjob *tfv1.TFJob, ttlDuration time.Duration) bool {
 	return false
 }
 
-func setClusterSpec(podTemplateSpec *v1.PodTemplateSpec, tfjob *tfv1.TFJob, rt, index string) error {
+func setClusterSpec(podTemplateSpec *corev1.PodTemplateSpec, tfjob *tfv1.TFJob, rt, index string) error {
 	// Generate TF_CONFIG JSON string.
 	tfConfigStr, err := genTFConfigJSONStr(tfjob, rt, index)
 	if err != nil {
@@ -286,9 +286,9 @@ func setClusterSpec(podTemplateSpec *v1.PodTemplateSpec, tfjob *tfv1.TFJob, rt, 
 	// Add TF_CONFIG environment variable.
 	for i := range podTemplateSpec.Spec.Containers {
 		if len(podTemplateSpec.Spec.Containers[i].Env) == 0 {
-			podTemplateSpec.Spec.Containers[i].Env = make([]v1.EnvVar, 0)
+			podTemplateSpec.Spec.Containers[i].Env = make([]corev1.EnvVar, 0)
 		}
-		podTemplateSpec.Spec.Containers[i].Env = append(podTemplateSpec.Spec.Containers[i].Env, v1.EnvVar{
+		podTemplateSpec.Spec.Containers[i].Env = append(podTemplateSpec.Spec.Containers[i].Env, corev1.EnvVar{
 			Name:  tfConfig,
 			Value: tfConfigStr,
 		})
@@ -296,11 +296,11 @@ func setClusterSpec(podTemplateSpec *v1.PodTemplateSpec, tfjob *tfv1.TFJob, rt, 
 	return nil
 }
 
-func setRestartPolicy(podTemplateSpec *v1.PodTemplateSpec, spec *common.ReplicaSpec) {
+func setRestartPolicy(podTemplateSpec *corev1.PodTemplateSpec, spec *common.ReplicaSpec) {
 	if spec.RestartPolicy == common.RestartPolicyExitCode {
-		podTemplateSpec.Spec.RestartPolicy = v1.RestartPolicyNever
+		podTemplateSpec.Spec.RestartPolicy = corev1.RestartPolicyNever
 	} else {
-		podTemplateSpec.Spec.RestartPolicy = v1.RestartPolicy(spec.RestartPolicy)
+		podTemplateSpec.Spec.RestartPolicy = corev1.RestartPolicy(spec.RestartPolicy)
 	}
 }
 

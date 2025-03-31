@@ -19,7 +19,7 @@ import (
 	"fmt"
 	"time"
 
-	v1 "k8s.io/api/core/v1"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 
@@ -88,7 +88,7 @@ func (tc *TFController) updateStatusSingle(tfjob *tfv1.TFJob, rtype tfv1.TFRepli
 			}
 			if expected == 0 {
 				msg := fmt.Sprintf("TFJob %s successfully completed.", tfjob.Name)
-				tc.Recorder.Event(tfjob, v1.EventTypeNormal, tfJobSucceededReason, msg)
+				tc.Recorder.Event(tfjob, corev1.EventTypeNormal, tfJobSucceededReason, msg)
 				if tfjob.Status.CompletionTime == nil {
 					now := metav1.Now()
 					tfjob.Status.CompletionTime = &now
@@ -108,7 +108,7 @@ func (tc *TFController) updateStatusSingle(tfjob *tfv1.TFJob, rtype tfv1.TFRepli
 			// 2. If `SuccessPolicyAllWorkers` success policy is used and all workers are succeeded.
 			if expected == 0 || (worker0Completed && tfjob.Spec.SuccessPolicy != nil && *tfjob.Spec.SuccessPolicy != tfv1.SuccessPolicyAllWorkers) {
 				msg := fmt.Sprintf("TFJob %s successfully completed.", tfjob.Name)
-				tc.Recorder.Event(tfjob, v1.EventTypeNormal, tfJobSucceededReason, msg)
+				tc.Recorder.Event(tfjob, corev1.EventTypeNormal, tfJobSucceededReason, msg)
 				if tfjob.Status.CompletionTime == nil {
 					now := metav1.Now()
 					tfjob.Status.CompletionTime = &now
@@ -135,7 +135,7 @@ func (tc *TFController) updateStatusSingle(tfjob *tfv1.TFJob, rtype tfv1.TFRepli
 		if restart {
 			msg := fmt.Sprintf("TFJob %s is restarting because %d %s replica(s) failed.",
 				tfjob.Name, failed, rtype)
-			tc.Recorder.Event(tfjob, v1.EventTypeWarning, tfJobRestartingReason, msg)
+			tc.Recorder.Event(tfjob, corev1.EventTypeWarning, tfJobRestartingReason, msg)
 			err := updateTFJobConditions(tfjob, common.JobRestarting, tfJobRestartingReason, msg)
 			if err != nil {
 				tflogger.LoggerForJob(tfjob).Infof("Append tfjob condition error: %v", err)
@@ -146,7 +146,7 @@ func (tc *TFController) updateStatusSingle(tfjob *tfv1.TFJob, rtype tfv1.TFRepli
 		} else {
 			msg := fmt.Sprintf("TFJob %s has failed because %d %s replica(s) failed.",
 				tfjob.Name, failed, rtype)
-			tc.Recorder.Event(tfjob, v1.EventTypeNormal, tfJobFailedReason, msg)
+			tc.Recorder.Event(tfjob, corev1.EventTypeNormal, tfJobFailedReason, msg)
 			if tfjob.Status.CompletionTime == nil {
 				now := metav1.Now()
 				tfjob.Status.CompletionTime = &now
@@ -186,14 +186,14 @@ func initializeTFReplicaStatuses(tfjob *tfv1.TFJob, rtype tfv1.TFReplicaType) {
 }
 
 // updateTFJobReplicaStatuses updates the TFJobReplicaStatuses according to the pod.
-func updateTFJobReplicaStatuses(tfjob *tfv1.TFJob, rtype tfv1.TFReplicaType, pod *v1.Pod) {
+func updateTFJobReplicaStatuses(tfjob *tfv1.TFJob, rtype tfv1.TFReplicaType, pod *corev1.Pod) {
 	commonType := common.ReplicaType(rtype)
 	switch pod.Status.Phase {
-	case v1.PodRunning:
+	case corev1.PodRunning:
 		tfjob.Status.ReplicaStatuses[commonType].Active++
-	case v1.PodSucceeded:
+	case corev1.PodSucceeded:
 		tfjob.Status.ReplicaStatuses[commonType].Succeeded++
-	case v1.PodFailed:
+	case corev1.PodFailed:
 		tfjob.Status.ReplicaStatuses[commonType].Failed++
 	}
 }
@@ -202,7 +202,7 @@ func updateTFJobReplicaStatuses(tfjob *tfv1.TFJob, rtype tfv1.TFReplicaType, pod
 func newCondition(conditionType common.JobConditionType, reason, message string) common.JobCondition {
 	return common.JobCondition{
 		Type:               conditionType,
-		Status:             v1.ConditionTrue,
+		Status:             corev1.ConditionTrue,
 		LastUpdateTime:     metav1.Now(),
 		LastTransitionTime: metav1.Now(),
 		Reason:             reason,
@@ -222,7 +222,7 @@ func getCondition(status common.JobStatus, condType common.JobConditionType) *co
 
 func hasCondition(status common.JobStatus, condType common.JobConditionType) bool {
 	for _, condition := range status.Conditions {
-		if condition.Type == condType && condition.Status == v1.ConditionTrue {
+		if condition.Type == condType && condition.Status == corev1.ConditionTrue {
 			return true
 		}
 	}
@@ -282,7 +282,7 @@ func filterOutCondition(conditions []common.JobCondition, condType common.JobCon
 
 		// Set the running condition status to be false when current condition failed or succeeded
 		if (condType == common.JobFailed || condType == common.JobSucceeded) && c.Type == common.JobRunning {
-			c.Status = v1.ConditionFalse
+			c.Status = corev1.ConditionFalse
 		}
 
 		newConditions = append(newConditions, c)

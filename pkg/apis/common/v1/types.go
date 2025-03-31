@@ -4,7 +4,7 @@
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
-//      http://www.apache.org/licenses/LICENSE-2.0
+//	http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -14,7 +14,7 @@
 package v1
 
 import (
-	"k8s.io/api/core/v1"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -68,7 +68,7 @@ type ReplicaSpec struct {
 
 	// Describes the pod that will be created for this replica. Note that
 	// RestartPolicy in PodTemplateSpec will be overidden by RestartPolicy in ReplicaSpec.
-	Template v1.PodTemplateSpec `json:"template,omitempty"`
+	Template corev1.PodTemplateSpec `json:"template,omitempty"`
 
 	// Restart policy for all replicas within the job.
 	// One of Always, OnFailure, Never, or ExitCode.
@@ -83,7 +83,7 @@ type JobCondition struct {
 	Type JobConditionType `json:"type"`
 
 	// Status of the condition, one of True, False, or Unknown.
-	Status v1.ConditionStatus `json:"status"`
+	Status corev1.ConditionStatus `json:"status"`
 
 	// The reason for the condition's last transition.
 	Reason string `json:"reason,omitempty"`
