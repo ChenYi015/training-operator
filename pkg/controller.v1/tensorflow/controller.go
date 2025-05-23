@@ -24,7 +24,7 @@ import (
 
 	kubebatchclient "github.com/kubernetes-sigs/kube-batch/pkg/client/clientset/versioned"
 	log "github.com/sirupsen/logrus"
-	v1 "k8s.io/api/core/v1"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
@@ -267,7 +267,7 @@ func (tc *TFController) processNextWorkItem() bool {
 		if err == errFailedMarshal {
 			errMsg := fmt.Sprintf("Failed to unmarshal the object to TFJob object: %v", err)
 			tflogger.LoggerForJob(tfJob).Warn(errMsg)
-			tc.Recorder.Event(tfJob, v1.EventTypeWarning, failedMarshalTFJobReason, errMsg)
+			tc.Recorder.Event(tfJob, corev1.EventTypeWarning, failedMarshalTFJobReason, errMsg)
 		}
 
 		return true
@@ -387,7 +387,7 @@ func (tc *TFController) reconcileTFJobs(tfjob *tfv1.TFJob) error {
 
 	activePods := k8sutil.FilterActivePods(pods)
 	active := int32(len(activePods))
-	failed := k8sutil.FilterPodCount(pods, v1.PodFailed)
+	failed := k8sutil.FilterPodCount(pods, corev1.PodFailed)
 	totalReplicas := getTotalReplicas(tfjob)
 	prevReplicasFailedNum := getTotalFailedReplicas(tfjob)
 
@@ -418,7 +418,7 @@ func (tc *TFController) reconcileTFJobs(tfjob *tfv1.TFJob) error {
 	} else if tc.pastActiveDeadline(tfjob) {
 		failureMessage = fmt.Sprintf("TFJob %s has failed because it was active longer than specified deadline", tfjob.Name)
 		if action, ok := tfjob.Annotations[JobPastActiveDeadlineActionAnnotation]; ok && action == "event" {
-			tc.Recorder.Event(tfjob, v1.EventTypeWarning, tfJobFailedReason, failureMessage)
+			tc.Recorder.Event(tfjob, corev1.EventTypeWarning, tfJobFailedReason, failureMessage)
 		} else {
 			tfJobExceedsLimit = true
 		}
@@ -445,7 +445,7 @@ func (tc *TFController) reconcileTFJobs(tfjob *tfv1.TFJob) error {
 		}
 
 		if tfJobExceedsLimit {
-			tc.Recorder.Event(tfjob, v1.EventTypeNormal, tfJobFailedReason, failureMessage)
+			tc.Recorder.Event(tfjob, corev1.EventTypeNormal, tfJobFailedReason, failureMessage)
 			if tfjob.Status.CompletionTime == nil {
 				now := metav1.Now()
 				tfjob.Status.CompletionTime = &now
@@ -487,7 +487,7 @@ func (tc *TFController) reconcileTFJobs(tfjob *tfv1.TFJob) error {
 	}
 
 	// Save the current state of the replicas
-	replicasStatus := make(map[string]v1.PodPhase)
+	replicasStatus := make(map[string]corev1.PodPhase)
 	// get the custom role sequence.
 	roles := sortTFJobRoles(tfjob.Spec.TFReplicaSpecs, pods)
 	logger.Infof("the Role Sequence of job %v is: %v", tfjob.Name, roles)
@@ -553,7 +553,7 @@ func (tc *TFController) satisfiedExpectations(tfjob *tfv1.TFJob) bool {
 
 // pastBackoffLimit checks if container restartCounts sum exceeds BackoffLimit
 // this method applies only to pods with restartPolicy == OnFailure or Always
-func (tc *TFController) pastBackoffLimit(tfjob *tfv1.TFJob, pods []*v1.Pod) (bool, error) {
+func (tc *TFController) pastBackoffLimit(tfjob *tfv1.TFJob, pods []*corev1.Pod) (bool, error) {
 	if tfjob.Spec.BackoffLimit == nil {
 		return false, nil
 	}
@@ -572,7 +572,7 @@ func (tc *TFController) pastBackoffLimit(tfjob *tfv1.TFJob, pods []*v1.Pod) (boo
 		}
 		for i := range pods {
 			po := pods[i]
-			if po.Status.Phase == v1.PodRunning || po.Status.Phase == v1.PodPending {
+			if po.Status.Phase == corev1.PodRunning || po.Status.Phase == corev1.PodPending {
 				for j := range po.Status.InitContainerStatuses {
 					stat := po.Status.InitContainerStatuses[j]
 					result += stat.RestartCount
@@ -616,13 +616,13 @@ func (tc *TFController) pastStartingDeadline(tfjob *tfv1.TFJob) bool {
 	return duration >= allowedDuration
 }
 
-func (tc *TFController) updatePodWhenFailed(pods []*v1.Pod, tfjob *tfv1.TFJob) error {
+func (tc *TFController) updatePodWhenFailed(pods []*corev1.Pod, tfjob *tfv1.TFJob) error {
 	if value, ok := tfjob.Annotations[TFJobEvictAnnotation]; !(ok && value == "false") {
 		return nil
 	}
 
 	for _, pod := range pods {
-		if pod.Status.Phase == v1.PodFailed {
+		if pod.Status.Phase == corev1.PodFailed {
 			newPod := pod.DeepCopy()
 			newPod.Annotations[PodEvictAnnotation] = "false"
 			if !reflect.DeepEqual(pod, newPod) {
@@ -678,7 +678,7 @@ func (tc *TFController) ControllerName() string {
 	return controllerName
 }
 
-func sortTFJobRoles(roleSpecs map[tfv1.TFReplicaType]*common.ReplicaSpec, pods []*v1.Pod) []tfv1.TFReplicaType {
+func sortTFJobRoles(roleSpecs map[tfv1.TFReplicaType]*common.ReplicaSpec, pods []*corev1.Pod) []tfv1.TFReplicaType {
 	var sortRolesFromStrs = func(customRoleSeq []string) []tfv1.TFReplicaType {
 		roles := []tfv1.TFReplicaType{}
 		exists := map[tfv1.TFReplicaType]bool{}

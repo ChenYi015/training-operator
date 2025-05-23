@@ -18,7 +18,7 @@ import (
 	"strings"
 
 	log "github.com/sirupsen/logrus"
-	"k8s.io/api/core/v1"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	metav1unstructured "k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 )
@@ -42,7 +42,7 @@ func LoggerForJob(job metav1.Object) *log.Entry {
 	})
 }
 
-func LoggerForPod(pod *v1.Pod, kind string) *log.Entry {
+func LoggerForPod(pod *corev1.Pod, kind string) *log.Entry {
 	job := ""
 	if controllerRef := metav1.GetControllerOf(pod); controllerRef != nil {
 		if controllerRef.Kind == kind {

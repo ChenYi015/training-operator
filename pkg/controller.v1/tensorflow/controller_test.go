@@ -20,14 +20,18 @@ import (
 	"testing"
 	"time"
 
+	"github.com/golang/protobuf/proto"
 	kubebatchclient "github.com/kubernetes-sigs/kube-batch/pkg/client/clientset/versioned"
-	"k8s.io/api/core/v1"
+	corev1 "k8s.io/api/core/v1"
+	"k8s.io/api/policy/v1beta1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/intstr"
 	kubeinformers "k8s.io/client-go/informers"
 	kubeclientset "k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/kubernetes/fake"
 	"k8s.io/client-go/rest"
 	"k8s.io/kubernetes/pkg/controller"
 
-	"github.com/golang/protobuf/proto"
 	"github.com/kubeflow/tf-operator/cmd/tf-operator.v1/app/options"
 	common "github.com/kubeflow/tf-operator/pkg/apis/common/v1"
 	tfv1 "github.com/kubeflow/tf-operator/pkg/apis/tensorflow/v1"
@@ -35,10 +39,6 @@ import (
 	tfjobinformers "github.com/kubeflow/tf-operator/pkg/client/informers/externalversions"
 	"github.com/kubeflow/tf-operator/pkg/common/util/v1/testutil"
 	"github.com/kubeflow/tf-operator/pkg/control"
-	"k8s.io/api/policy/v1beta1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/util/intstr"
-	"k8s.io/client-go/kubernetes/fake"
 )
 
 var (
@@ -213,7 +213,7 @@ func TestNormalPath(t *testing.T) {
 		kubeClientSet := kubeclientset.NewForConfigOrDie(&rest.Config{
 			Host: "",
 			ContentConfig: rest.ContentConfig{
-				GroupVersion: &v1.SchemeGroupVersion,
+				GroupVersion: &corev1.SchemeGroupVersion,
 			},
 		},
 		)
@@ -222,7 +222,7 @@ func TestNormalPath(t *testing.T) {
 		kubeBatchClientSet := kubebatchclient.NewForConfigOrDie(&rest.Config{
 			Host: "",
 			ContentConfig: rest.ContentConfig{
-				GroupVersion: &v1.SchemeGroupVersion,
+				GroupVersion: &corev1.SchemeGroupVersion,
 			},
 		},
 		)
@@ -366,7 +366,7 @@ func TestRun(t *testing.T) {
 	kubeClientSet := kubeclientset.NewForConfigOrDie(&rest.Config{
 		Host: "",
 		ContentConfig: rest.ContentConfig{
-			GroupVersion: &v1.SchemeGroupVersion,
+			GroupVersion: &corev1.SchemeGroupVersion,
 		},
 	},
 	)
@@ -375,7 +375,7 @@ func TestRun(t *testing.T) {
 	kubeBatchClientSet := kubebatchclient.NewForConfigOrDie(&rest.Config{
 		Host: "",
 		ContentConfig: rest.ContentConfig{
-			GroupVersion: &v1.SchemeGroupVersion,
+			GroupVersion: &corev1.SchemeGroupVersion,
 		},
 	},
 	)
@@ -418,7 +418,7 @@ func TestSyncPdb(t *testing.T) {
 	kubeBatchClientSet := kubebatchclient.NewForConfigOrDie(&rest.Config{
 		Host: "",
 		ContentConfig: rest.ContentConfig{
-			GroupVersion: &v1.SchemeGroupVersion,
+			GroupVersion: &corev1.SchemeGroupVersion,
 		},
 	},
 	)

@@ -17,9 +17,10 @@ package v1
 import (
 	"strings"
 
-	common "github.com/kubeflow/tf-operator/pkg/apis/common/v1"
-	"k8s.io/api/core/v1"
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+
+	common "github.com/kubeflow/tf-operator/pkg/apis/common/v1"
 )
 
 // Int32 is a helper routine that allocates a new int32 value
@@ -33,7 +34,7 @@ func addDefaultingFuncs(scheme *runtime.Scheme) error {
 }
 
 // setDefaultPort sets the default ports for tensorflow container.
-func setDefaultPort(spec *v1.PodSpec) {
+func setDefaultPort(spec *corev1.PodSpec) {
 	index := 0
 	for i, container := range spec.Containers {
 		if container.Name == DefaultContainerName {
@@ -50,7 +51,7 @@ func setDefaultPort(spec *v1.PodSpec) {
 		}
 	}
 	if !hasTFJobPort {
-		spec.Containers[index].Ports = append(spec.Containers[index].Ports, v1.ContainerPort{
+		spec.Containers[index].Ports = append(spec.Containers[index].Ports, corev1.ContainerPort{
 			Name:          DefaultPortName,
 			ContainerPort: DefaultPort,
 		})

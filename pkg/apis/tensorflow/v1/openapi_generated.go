@@ -24,7 +24,7 @@ package v1
 import (
 	spec "github.com/go-openapi/spec"
 	resource "k8s.io/apimachinery/pkg/api/resource"
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	intstr "k8s.io/apimachinery/pkg/util/intstr"
 	common "k8s.io/kube-openapi/pkg/common"
 )
@@ -10192,8 +10192,8 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 		"k8s.io/apimachinery/pkg/apis/meta/v1.MicroTime": {
 			Schema: spec.Schema{
 				SchemaProps: spec.SchemaProps{
-					Type:   v1.MicroTime{}.OpenAPISchemaType(),
-					Format: v1.MicroTime{}.OpenAPISchemaFormat(),
+					Type:   metav1.MicroTime{}.OpenAPISchemaType(),
+					Format: metav1.MicroTime{}.OpenAPISchemaFormat(),
 				},
 			},
 		},
@@ -10642,8 +10642,8 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 		"k8s.io/apimachinery/pkg/apis/meta/v1.Time": {
 			Schema: spec.Schema{
 				SchemaProps: spec.SchemaProps{
-					Type:   v1.Time{}.OpenAPISchemaType(),
-					Format: v1.Time{}.OpenAPISchemaFormat(),
+					Type:   metav1.Time{}.OpenAPISchemaType(),
+					Format: metav1.Time{}.OpenAPISchemaFormat(),
 				},
 			},
 		},

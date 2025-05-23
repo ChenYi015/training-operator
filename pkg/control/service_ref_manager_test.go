@@ -18,7 +18,7 @@ import (
 	"reflect"
 	"testing"
 
-	"k8s.io/api/core/v1"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 
@@ -32,8 +32,8 @@ func TestClaimServices(t *testing.T) {
 	type test struct {
 		name     string
 		manager  *ServiceControllerRefManager
-		services []*v1.Service
-		claimed  []*v1.Service
+		services []*corev1.Service
+		claimed  []*corev1.Service
 	}
 	var tests = []test{
 		func() test {
@@ -54,8 +54,8 @@ func TestClaimServices(t *testing.T) {
 					tfJobLabelSelector,
 					tfv1.SchemeGroupVersionKind,
 					func() error { return nil }),
-				services: []*v1.Service{testutil.NewBaseService("service1", tfJob, t), testService},
-				claimed:  []*v1.Service{testutil.NewBaseService("service1", tfJob, t)},
+				services: []*corev1.Service{testutil.NewBaseService("service1", tfJob, t), testService},
+				claimed:  []*corev1.Service{testutil.NewBaseService("service1", tfJob, t)},
 			}
 		}(),
 		func() test {
@@ -80,7 +80,7 @@ func TestClaimServices(t *testing.T) {
 					controllerLabelSelector,
 					tfv1.SchemeGroupVersionKind,
 					func() error { return nil }),
-				services: []*v1.Service{testService1, testService2},
+				services: []*corev1.Service{testService1, testService2},
 				claimed:  nil,
 			}
 		}(),
@@ -104,8 +104,8 @@ func TestClaimServices(t *testing.T) {
 					controllerLabelSelector,
 					tfv1.SchemeGroupVersionKind,
 					func() error { return nil }),
-				services: []*v1.Service{testutil.NewBaseService("service1", controller, t), testService2},
-				claimed:  []*v1.Service{testutil.NewBaseService("service1", controller, t)},
+				services: []*corev1.Service{testutil.NewBaseService("service1", controller, t), testService2},
+				claimed:  []*corev1.Service{testutil.NewBaseService("service1", controller, t)},
 			}
 		}(),
 		func() test {
@@ -126,8 +126,8 @@ func TestClaimServices(t *testing.T) {
 					controllerLabelSelector,
 					tfv1.SchemeGroupVersionKind,
 					func() error { return nil }),
-				services: []*v1.Service{testutil.NewBaseService("service1", controller, t), testutil.NewBaseService("service2", controller2, t)},
-				claimed:  []*v1.Service{testutil.NewBaseService("service1", controller, t)},
+				services: []*corev1.Service{testutil.NewBaseService("service1", controller, t), testutil.NewBaseService("service2", controller2, t)},
+				claimed:  []*corev1.Service{testutil.NewBaseService("service1", controller, t)},
 			}
 		}(),
 		func() test {
@@ -148,8 +148,8 @@ func TestClaimServices(t *testing.T) {
 					controllerLabelSelector,
 					tfv1.SchemeGroupVersionKind,
 					func() error { return nil }),
-				services: []*v1.Service{testutil.NewBaseService("service1", controller, t), testService2},
-				claimed:  []*v1.Service{testutil.NewBaseService("service1", controller, t)},
+				services: []*corev1.Service{testutil.NewBaseService("service1", controller, t), testService2},
+				claimed:  []*corev1.Service{testutil.NewBaseService("service1", controller, t)},
 			}
 		}(),
 		func() test {
@@ -175,8 +175,8 @@ func TestClaimServices(t *testing.T) {
 					controllerLabelSelector,
 					tfv1.SchemeGroupVersionKind,
 					func() error { return nil }),
-				services: []*v1.Service{testService1, testService2},
-				claimed:  []*v1.Service{testService1},
+				services: []*corev1.Service{testService1, testService2},
+				claimed:  []*corev1.Service{testService1},
 			}
 		}(),
 	}
@@ -191,7 +191,7 @@ func TestClaimServices(t *testing.T) {
 	}
 }
 
-func serviceToStringSlice(services []*v1.Service) []string {
+func serviceToStringSlice(services []*corev1.Service) []string {
 	var names []string
 	for _, service := range services {
 		names = append(names, service.Name)
