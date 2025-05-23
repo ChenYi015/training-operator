@@ -211,7 +211,7 @@ func TestDeletePodsAndServices(t *testing.T) {
 		activeWorkerServices int32
 		activePSServices     int32
 
-		expectedPodDeletions int
+		expectedPodDeletions     int
 		expectedServiceDeletions int
 	}
 
@@ -233,7 +233,7 @@ func TestDeletePodsAndServices(t *testing.T) {
 			activeWorkerServices: 4,
 			activePSServices:     2,
 
-			expectedPodDeletions: 6,
+			expectedPodDeletions:     6,
 			expectedServiceDeletions: 6,
 		},
 		{
@@ -272,7 +272,7 @@ func TestDeletePodsAndServices(t *testing.T) {
 			activeWorkerServices: 4,
 			activePSServices:     2,
 
-			expectedPodDeletions: 0,
+			expectedPodDeletions:     0,
 			expectedServiceDeletions: 6,
 		},
 		{
@@ -292,7 +292,7 @@ func TestDeletePodsAndServices(t *testing.T) {
 			activeWorkerServices: 4,
 			activePSServices:     2,
 
-			expectedPodDeletions: 0,
+			expectedPodDeletions:     0,
 			expectedServiceDeletions: 6,
 		},
 	}
