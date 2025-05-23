@@ -110,7 +110,7 @@ func TestStatus(t *testing.T) {
 	}
 
 	testCases := []testCase{
-		testCase{
+		{
 			description:             "Chief worker is succeeded",
 			tfJob:                   testutil.NewTFJobWithChief(1, 0),
 			expectedFailedPS:        0,
@@ -126,7 +126,7 @@ func TestStatus(t *testing.T) {
 			worker0Completed:        false,
 			expectedType:            common.JobSucceeded,
 		},
-		testCase{
+		{
 			description:             "Chief worker is running",
 			tfJob:                   testutil.NewTFJobWithChief(1, 0),
 			expectedFailedPS:        0,
@@ -142,7 +142,7 @@ func TestStatus(t *testing.T) {
 			worker0Completed:        false,
 			expectedType:            common.JobRunning,
 		},
-		testCase{
+		{
 			description:             "Chief worker is failed",
 			tfJob:                   testutil.NewTFJobWithChief(1, 0),
 			expectedFailedPS:        0,
@@ -158,7 +158,7 @@ func TestStatus(t *testing.T) {
 			worker0Completed:        false,
 			expectedType:            common.JobFailed,
 		},
-		testCase{
+		{
 			description:             "(No chief worker) Worker is failed",
 			tfJob:                   testutil.NewTFJob(1, 0),
 			expectedFailedPS:        0,
@@ -174,7 +174,7 @@ func TestStatus(t *testing.T) {
 			worker0Completed:        false,
 			expectedType:            common.JobFailed,
 		},
-		testCase{
+		{
 			description:             "(No chief worker) Worker is succeeded",
 			tfJob:                   testutil.NewTFJob(1, 0),
 			expectedFailedPS:        0,
@@ -190,7 +190,7 @@ func TestStatus(t *testing.T) {
 			worker0Completed:        false,
 			expectedType:            common.JobSucceeded,
 		},
-		testCase{
+		{
 			description:             "(No chief worker) Worker is running",
 			tfJob:                   testutil.NewTFJob(1, 0),
 			expectedFailedPS:        0,
@@ -206,7 +206,7 @@ func TestStatus(t *testing.T) {
 			worker0Completed:        false,
 			expectedType:            common.JobRunning,
 		},
-		testCase{
+		{
 			description:             "(No chief worker) 2 workers are succeeded, 2 workers are active",
 			tfJob:                   testutil.NewTFJob(4, 2),
 			expectedFailedPS:        0,
@@ -222,7 +222,7 @@ func TestStatus(t *testing.T) {
 			worker0Completed:        false,
 			expectedType:            common.JobRunning,
 		},
-		testCase{
+		{
 			description:             "(No chief worker) 2 workers are running, 2 workers are failed",
 			tfJob:                   testutil.NewTFJob(4, 2),
 			expectedFailedPS:        0,
@@ -238,7 +238,7 @@ func TestStatus(t *testing.T) {
 			worker0Completed:        false,
 			expectedType:            common.JobFailed,
 		},
-		testCase{
+		{
 			description:             "(No chief worker) 2 workers are succeeded, 2 workers are failed",
 			tfJob:                   testutil.NewTFJob(4, 2),
 			expectedFailedPS:        0,
@@ -254,7 +254,7 @@ func TestStatus(t *testing.T) {
 			worker0Completed:        false,
 			expectedType:            common.JobFailed,
 		},
-		testCase{
+		{
 			description:             "(No chief worker) worker-0 are succeeded, 3 workers are active",
 			tfJob:                   testutil.NewTFJob(4, 2),
 			expectedFailedPS:        0,
@@ -270,7 +270,7 @@ func TestStatus(t *testing.T) {
 			worker0Completed:        true,
 			expectedType:            common.JobSucceeded,
 		},
-		testCase{
+		{
 			description:             "(No chief worker, successPolicy: AllWorkers) worker-0 are succeeded, 3 workers are active",
 			tfJob:                   testutil.NewTFJobWithSuccessPolicy(4, 0, tfv1.SuccessPolicyAllWorkers),
 			expectedFailedPS:        0,
@@ -286,7 +286,7 @@ func TestStatus(t *testing.T) {
 			worker0Completed:        true,
 			expectedType:            common.JobRunning,
 		},
-		testCase{
+		{
 			description:             "(No chief worker, successPolicy: AllWorkers) 4 workers are succeeded",
 			tfJob:                   testutil.NewTFJobWithSuccessPolicy(4, 0, tfv1.SuccessPolicyAllWorkers),
 			expectedFailedPS:        0,
@@ -302,7 +302,7 @@ func TestStatus(t *testing.T) {
 			worker0Completed:        true,
 			expectedType:            common.JobSucceeded,
 		},
-		testCase{
+		{
 			description:             "(No chief worker, successPolicy: AllWorkers) worker-0 is succeeded, 2 workers are running, 1 worker is failed",
 			tfJob:                   testutil.NewTFJobWithSuccessPolicy(4, 0, tfv1.SuccessPolicyAllWorkers),
 			expectedFailedPS:        0,
@@ -318,7 +318,7 @@ func TestStatus(t *testing.T) {
 			worker0Completed:        true,
 			expectedType:            common.JobFailed,
 		},
-		testCase{
+		{
 			description:             "Chief is running, workers are failed",
 			tfJob:                   testutil.NewTFJobWithChief(4, 2),
 			expectedFailedPS:        0,
@@ -334,7 +334,7 @@ func TestStatus(t *testing.T) {
 			worker0Completed:        false,
 			expectedType:            common.JobRunning,
 		},
-		testCase{
+		{
 			description:             "Chief is running, workers are succeeded",
 			tfJob:                   testutil.NewTFJobWithChief(4, 2),
 			expectedFailedPS:        0,
@@ -350,7 +350,7 @@ func TestStatus(t *testing.T) {
 			worker0Completed:        false,
 			expectedType:            common.JobRunning,
 		},
-		testCase{
+		{
 			description:             "Chief is running, a PS is failed",
 			tfJob:                   testutil.NewTFJobWithChief(4, 2),
 			expectedFailedPS:        1,
@@ -366,7 +366,7 @@ func TestStatus(t *testing.T) {
 			worker0Completed:        false,
 			expectedType:            common.JobFailed,
 		},
-		testCase{
+		{
 			description:             "Chief is failed, workers are succeeded",
 			tfJob:                   testutil.NewTFJobWithChief(4, 2),
 			expectedFailedPS:        0,
@@ -382,7 +382,7 @@ func TestStatus(t *testing.T) {
 			worker0Completed:        false,
 			expectedType:            common.JobFailed,
 		},
-		testCase{
+		{
 			description:             "Chief is succeeded, workers are failed",
 			tfJob:                   testutil.NewTFJobWithChief(4, 2),
 			expectedFailedPS:        0,
@@ -398,7 +398,7 @@ func TestStatus(t *testing.T) {
 			worker0Completed:        false,
 			expectedType:            common.JobSucceeded,
 		},
-		testCase{
+		{
 			description:             "Chief is failed and restarting",
 			tfJob:                   testutil.NewTFJobWithChief(4, 2),
 			expectedFailedPS:        0,
