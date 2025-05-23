@@ -212,10 +212,11 @@ func TestDeletePodsAndServices(t *testing.T) {
 		activePSServices     int32
 
 		expectedPodDeletions int
+		expectedServiceDeletions int
 	}
 
 	testCases := []testCase{
-		testCase{
+		{
 			description: "4 workers and 2 ps is running, policy is all",
 			tfJob:       testutil.NewTFJobWithCleanPolicy(0, 4, 2, common.CleanPodPolicyAll),
 
@@ -233,8 +234,9 @@ func TestDeletePodsAndServices(t *testing.T) {
 			activePSServices:     2,
 
 			expectedPodDeletions: 6,
+			expectedServiceDeletions: 6,
 		},
-		testCase{
+		{
 			description: "4 workers and 2 ps is running, policy is running",
 			tfJob:       testutil.NewTFJobWithCleanPolicy(0, 4, 2, common.CleanPodPolicyRunning),
 
@@ -253,7 +255,7 @@ func TestDeletePodsAndServices(t *testing.T) {
 
 			expectedPodDeletions: 6,
 		},
-		testCase{
+		{
 			description: "4 workers and 2 ps is succeeded, policy is running",
 			tfJob:       testutil.NewTFJobWithCleanPolicy(0, 4, 2, common.CleanPodPolicyRunning),
 
@@ -271,8 +273,9 @@ func TestDeletePodsAndServices(t *testing.T) {
 			activePSServices:     2,
 
 			expectedPodDeletions: 0,
+			expectedServiceDeletions: 6,
 		},
-		testCase{
+		{
 			description: "4 workers and 2 ps is succeeded, policy is None",
 			tfJob:       testutil.NewTFJobWithCleanPolicy(0, 4, 2, common.CleanPodPolicyNone),
 
@@ -290,8 +293,10 @@ func TestDeletePodsAndServices(t *testing.T) {
 			activePSServices:     2,
 
 			expectedPodDeletions: 0,
+			expectedServiceDeletions: 6,
 		},
 	}
+
 	for _, tc := range testCases {
 		// Prepare the clientset and controller for the test.
 		kubeClientSet := kubeclientset.NewForConfigOrDie(&rest.Config{
