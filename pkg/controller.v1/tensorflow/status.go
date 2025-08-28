@@ -99,10 +99,16 @@ func (tc *TFController) updateStatusSingle(tfjob *tfv1.TFJob, rtype tfv1.TFRepli
 			}
 		}
 	} else if rtype == tfv1.TFReplicaTypeWorker {
+		successPolicy := tfv1.SuccessPolicyDefault
+		if tfjob.Spec.SuccessPolicy != nil {
+			successPolicy = *tfjob.Spec.SuccessPolicy
+		}
 		// Leave a succeeded condition for the following two cases:
-		// 1. If success policy `SuccessPolicyAllWorkers` is used and no workers are pending, running or failed.
-		// 2. If default success policy is used and worker 0 has completed.
-		if isRunning(tfjob.Status) && (pending+running+failed == 0) || (worker0Completed && (tfjob.Spec.SuccessPolicy == nil || *tfjob.Spec.SuccessPolicy != tfv1.SuccessPolicyAllWorkers)) {
+		// 1. If success policy `SuccessPolicyDefault` is used and worker 0 has completed.
+		// 2. If success policy `SuccessPolicyAllWorkers` is used and no workers are pending, running or failed.
+		if succeeded == replicas ||
+			(successPolicy == tfv1.SuccessPolicyDefault && worker0Completed) ||
+			(successPolicy == tfv1.SuccessPolicyAllWorkers && isRunning(tfjob.Status) && (pending+running+failed == 0)) {
 			msg := fmt.Sprintf("TFJob %s successfully completed.", tfjob.Name)
 			tc.Recorder.Event(tfjob, corev1.EventTypeNormal, tfJobSucceededReason, msg)
 			if tfjob.Status.CompletionTime == nil {
